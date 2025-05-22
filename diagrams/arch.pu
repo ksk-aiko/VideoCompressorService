@@ -1,0 +1,40 @@
+@startuml
+title Client-Server Architecture for MP4 Upload System
+
+package "Client" {
+    [CLI Interface] --> [File Validator]
+    [CLI Interface] --> [Uploader]
+    [File Validator] --> [Uploader]
+}
+
+package "Network (TCP)" {
+    [Uploader] --> [TCP Socket]
+    [TCP Socket] --> [TCP Listener]
+}
+
+package "Server" {
+    [TCP Listener] --> [Request Handler]
+    [Request Handler] --> [File Writer]
+    [File Writer] --> [Storage Monitor]
+    [Storage Monitor] --> [Capacity Manager]
+    [Request Handler] --> [Response Sender]
+}
+
+note right of [Uploader]
+- Validates .mp4 file
+- Sends file metadata and content
+- Receives status response
+end note
+
+note right of [Request Handler]
+- Reads file size header
+- Reads file content
+- Ensures integrity
+end note
+
+note right of [Storage Monitor]
+- Tracks total stored bytes
+- Prevents over 4TB usage
+end note
+
+@enduml

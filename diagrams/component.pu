@@ -1,0 +1,33 @@
+@startuml
+title Component Diagram - MP4 Upload System
+
+package "Client Side" {
+  [CLI] --> [FileSelector]
+  [CLI] --> [Validator]
+  [CLI] --> [Uploader]
+  [Uploader] --> [TCPSocketClient]
+}
+
+package "Server Side" {
+  [TCPSocketServer] --> [RequestHandler]
+  [RequestHandler] --> [FileReceiver]
+  [RequestHandler] --> [StorageChecker]
+  [FileReceiver] --> [DiskWriter]
+  [RequestHandler] --> [StatusResponder]
+}
+
+[Client Binary] --> [CLI]
+
+[Server Binary] --> [TCPSocketServer]
+
+note right of [Uploader]
+Handles TCP packetization and transmission
+end note
+
+note right of [StorageChecker]
+Prevents overcapacity (4TB limit)
+end note
+
+note right of [StatusResponder]
+Sends 16-byte status after
+::contentReference[oaicite:5]{index=5}

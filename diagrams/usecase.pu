@@ -1,0 +1,38 @@
+@startuml
+title Use Case Diagram - MP4 Upload System
+
+actor ClientUser as User
+
+rectangle "MP4 Upload CLI Client" {
+    (Select MP4 File)
+    (Validate File Format)
+    (Connect to Server)
+    (Send File Metadata)
+    (Send File Data)
+    (Receive Status Response)
+}
+
+rectangle "MP4 Upload Server" {
+    (Listen for Connections)
+    (Accept File Upload)
+    (Verify Storage Capacity)
+    (Write File to Disk)
+    (Send Status Response)
+}
+
+User --> (Select MP4 File)
+User --> (Connect to Server)
+
+(Select MP4 File) --> (Validate File Format)
+(Validate File Format) --> (Send File Metadata)
+(Send File Metadata) --> (Send File Data)
+(Send File Data) --> (Receive Status Response)
+
+(Connect to Server) --> (Listen for Connections)
+(Listen for Connections) --> (Accept File Upload)
+(Accept File Upload) --> (Verify Storage Capacity)
+(Verify Storage Capacity) --> (Write File to Disk)
+(Write File to Disk) --> (Send Status Response)
+(Send Status Response) --> (Receive Status Response)
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml
+title Activity Diagram - MP4 Upload Process
+
+start
+
+:User runs CLI Client;
+:Prompt user to select .mp4 file;
+if (File is .mp4?) then (yes)
+  :Open TCP connection to Server;
+  :Send 32-byte file size metadata;
+  :Send file in 1400-byte packets;
+  :Wait for 16-byte status response;
+  if (Success?) then (yes)
+    :Display success message;
+  else (no)
+    :Display failure message;
+  endif
+else (no)
+  :Display format error;
+endif
+
+stop
+@enduml

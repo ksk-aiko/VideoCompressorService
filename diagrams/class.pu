@@ -1,0 +1,64 @@
+@startuml
+title Class Diagram - MP4 Upload System
+
+class CLI {
+  +run()
+}
+
+class FileSelector {
+  +select_file(): str
+}
+
+class Validator {
+  +is_mp4(filename: str): bool
+}
+
+class Uploader {
+  -socket: TCPSocketClient
+  +send_file(file: str): bool
+}
+
+class TCPSocketClient {
+  +connect(host: str, port: int)
+  +send(data: bytes)
+  +receive(size: int): bytes
+  +close()
+}
+
+class TCPSocketServer {
+  +listen(port: int)
+  +accept(): Connection
+}
+
+class RequestHandler {
+  +handle_connection(conn: Connection)
+}
+
+class FileReceiver {
+  +receive_file(conn: Connection, size: int): str
+}
+
+class StorageChecker {
+  +has_capacity(file_size: int): bool
+}
+
+class DiskWriter {
+  +write_to_disk(file_data: bytes, path: str)
+}
+
+class StatusResponder {
+  +send_status(conn: Connection, status: str)
+}
+
+CLI --> FileSelector
+CLI --> Validator
+CLI --> Uploader
+Uploader --> TCPSocketClient
+
+TCPSocketServer --> RequestHandler
+RequestHandler --> FileReceiver
+RequestHandler --> StorageChecker
+RequestHandler --> StatusResponder
+FileReceiver --> DiskWriter
+
+@enduml

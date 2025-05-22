@@ -1,0 +1,27 @@
+@startuml
+title Sequence Diagram - MP4 File Upload
+
+actor User
+participant CLIClient as "CLI Client"
+participant TCPSocket as "TCP Socket"
+participant Server as "Upload Server"
+participant Disk as "Storage"
+
+User -> CLIClient: Launch CLI and select .mp4 file
+CLIClient -> CLIClient: Validate file extension
+CLIClient -> TCPSocket: Establish TCP connection
+TCPSocket -> Server: Connect
+
+CLIClient -> Server: Send 32-byte file size header
+loop For each 1400-byte packet
+    CLIClient -> Server: Send packet
+end
+
+Server -> Disk: Write packet to file
+
+Server -> Server: Verify full file received
+Server -> CLIClient: Send 16-byte status response
+
+CLIClient -> User: Display result message
+
+@enduml
