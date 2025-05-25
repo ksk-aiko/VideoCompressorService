@@ -30,4 +30,5 @@ end note
 
 note right of [StatusResponder]
 Sends 16-byte status after
-::contentReference[oaicite:5]{index=5}
+file transfer completion
+end note
