@@ -61,7 +61,7 @@ class Uploader:
             status = status_data.decode('utf-8', errors='ignore').strip()
 
             print(f"status from server: {status}")
-            return status == "OK"
+            return status == "SUCCESS"
         
         except Exception as e:
             print(f"An error occurred while uploading the file: {e}")
