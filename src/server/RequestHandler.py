@@ -39,7 +39,7 @@ class RequestHandler:
         try:
             logger.info(f"Handling connection from {conn.address}")
 
-            name_len_data = conn.recv(4)
+            name_len_data = conn.receive(4)
             if not name_len_data or len(name_len_data) != 4:
                 logger.error("Failed to receive name length data")
                 self.status_responder.send_status(conn, "ERROR")
@@ -47,7 +47,7 @@ class RequestHandler:
             
             name_len = struct.unpack('!I', name_len_data)[0]
 
-            filename_data = conn.recv(name_len)
+            filename_data = conn.receive(name_len)
             if not filename_data or len(filename_data) != name_len:
                 logger.error("Failed to receive filename data")
                 self.status_responder.send_status(conn, "ERROR")
@@ -55,7 +55,7 @@ class RequestHandler:
 
             filename = filename_data.decode('utf-8')
 
-            size_data = conn.recv(8)
+            size_data = conn.receive(8)
             if not size_data or len(size_data) != 8:
                 logger.error("Failed to receive file size data")
                 self.status_responder.send_status(conn, "ERROR")

@@ -4,7 +4,7 @@ This module provides functionality to check available storage space,
 track usage against a configured maximum, and determine if there's
 enough capacity for new files.
 Attributes:
-    max_stroage_bytes (int): Maximum storage capacity in bytes.
+    max_storage_bytes (int): Maximum storage capacity in bytes.
     storage_path (str): Path to the storage directory.
 Example:
     >>> checker = StorageChecker(max_storage_tb=2.0, storage_path='/data')
@@ -24,12 +24,12 @@ logger = logging.getLogger('StorageChecker')
 
 class StorageChecker:
     def __init__(self, max_storage_tb: float = 4.0, storage_path: str = None):
-        self.max_stroage_bytes = max_storage_tb * 1024 * 1024 * 1024 * 1024
+        self.max_storage_bytes = max_storage_tb * 1024 * 1024 * 1024 * 1024
         self.storage_path = storage_path or os.getcwd()
 
         if not os.path.exists(self.storage_path):
             try:
-                os.makedirs(self.strorage_path)
+                os.makedirs(self.storage_path)
                 logger.info(f"Created storage directory at {self.storage_path}")
             except Exception as e:
                 logger.error(f"Failed to create storage directory {self.storage_path}: {e}")
@@ -49,7 +49,7 @@ class StorageChecker:
             return 0
     
     def get_free_space(self) -> int:
-        return self.max_stroage_bytes - self.get_used_space()
+        return self.max_storage_bytes - self.get_used_space()
     
     def has_capacity(self, file_size: int) -> bool:
         free_space = self.get_free_space()
@@ -61,7 +61,7 @@ class StorageChecker:
     
     def get_system_free_space(self) -> Optional[int]:
         try:
-            disk_usage = shutil.disk_usage(self.storaga_path)
+            disk_usage = shutil.disk_usage(self.storage_path)
             return disk_usage.free
         except Exception as e:
             logger.error(f"Error getting system free space for {self.storage_path}: {e}")
