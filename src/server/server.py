@@ -94,7 +94,7 @@ class Server:
         signal.signal(signal.SIGTERM, signal_handler) # Handle termination signal
 
         while running:
-            self.server.server_socket.settimeout(1.0)
+            self.server.server_socket.settimeout(60)
             try:
                 conn = self.server.accept()
                 if conn:

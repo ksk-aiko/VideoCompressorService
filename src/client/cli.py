@@ -46,24 +46,24 @@ class CLI:
             print("Failed to upload file.") 
             return False
     
-    def main():
-        host = "localhost"
-        port = 5000
+def main():
+    host = "localhost"
+    port = 5000
 
-        args = sys.argv[1:]
-        if len(args) >= 1:
-            host = args[0]
-        if len(args) >= 2:
-            try:
-                port = int(args[1])
-            except ValueError:
-                print(f"Invalid port number: {args[1]}.")
-                sys.exit(1)
-        
-        cli = CLI(host, port)
-        success = cli.run()
-
-        sys.exit(0 if success else 1)
+    args = sys.argv[1:]
+    if len(args) >= 1:
+        host = args[0]
+    if len(args) >= 2:
+        try:
+            port = int(args[1])
+        except ValueError:
+            print(f"Invalid port number: {args[1]}.")
+            sys.exit(1)
     
-    if __name__ == "__main__":
-        main()
+    cli = CLI(host, port)
+    success = cli.run()
+
+    sys.exit(0 if success else 1)
+
+if __name__ == "__main__":
+    main()

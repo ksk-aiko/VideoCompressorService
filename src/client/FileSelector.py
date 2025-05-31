@@ -13,8 +13,8 @@ Methods:
 """
 
 import os
-import tkinter as tk
-from tkinter import filedialog
+# import tkinter as tk
+# from tkinter import filedialog
 from typing import Optional
 
 class FileSelector:
