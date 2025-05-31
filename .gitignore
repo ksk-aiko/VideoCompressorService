@@ -1,2 +1,4 @@
 # Ignore the initialization script
 ini.sh
+server.log
+__pycache__/
