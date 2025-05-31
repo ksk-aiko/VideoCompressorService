@@ -57,7 +57,7 @@ class Uploader:
                         print("Failed to send file data.")
                         return False
             
-            status_data = self.socket.recive(16)
+            status_data = self.socket.receive(16)
             status = status_data.decode('utf-8', errors='ignore').strip()
 
             print(f"status from server: {status}")
