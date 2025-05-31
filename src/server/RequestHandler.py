@@ -70,7 +70,8 @@ class RequestHandler:
                 self.status_responder.send_status(conn, "FULL")
                 return False
             
-            success, received_filename, _ = self.file_receiver.receive_file(conn)
+            # Receive the metadata.Because the file_receiver already handles the file receiving process
+            success, received_filename, _ = self.file_receiver.receive_file_with_metadata(conn, filename, file_size)
 
             if success:
                 self.status_responder.send_status(conn, "SUCCESS")

@@ -45,6 +45,10 @@ class Uploader:
             # Prepare the header with file name length, file name, and file size
             header = struct.pack('!I', name_len) + file_name_bytes + struct.pack('!Q', file_size)
             self.socket.send(header)
+
+            # Debugging output for the header
+            print(f"Sending header: name_len={name_len}, file_name={file_name}, size={file_size}")
+            print(f"Header bytes: {len(header)}")
         
             with open(file_path, 'rb') as file:
                 # Read the file in chunks and send it

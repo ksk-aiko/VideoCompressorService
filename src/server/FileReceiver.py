@@ -39,33 +39,9 @@ class FileReceiver:
     def __init__(self, disk_writer: DiskWriter):
         self.disk_writer = disk_writer
     
-    def receive_file(self, conn: Connection) -> Tuple[bool, str, int]:
+    def receive_file_with_metadata(self, conn: Connection, filename: str, file_size: int) -> Tuple[bool, str, int]:
         try:
-            # Read the file name length
-            # Receive 4 bytes for the length of the file name
-            name_len_data = conn.receive(4)
-            if not name_len_data or len(name_len_data) != 4:
-                logger.error("Failed to receive file name length")
-                return False, "", 0
-
-            name_len = struct.unpack('!I', name_len_data)[0]
-
-            filename_data = conn.receive(name_len)
-            if not filename_data or len(filename_data) != name_len:
-                logger.error("Failed to receive file name")
-                return False, "", 0
-            
-            filename = filename_data.decode('utf-8')
-
-            # Next 8 bytes are the file size
-            size_data = conn.receive(8)
-            if not size_data or len(size_data) != 8:
-                logger.error("Failed to receive file size")
-                return False, "", 0
-            
-            file_size = struct.unpack('!Q', size_data)[0]
-
-            logger.info(f"Receiving file: {filename} of size {file_size} bytes")
+            logger.info(f"Receiving file with provided metadata: {filename} of size {file_size} bytes")
 
             # Receive the file data in chunks
             remaining = file_size
