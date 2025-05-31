@@ -83,7 +83,7 @@ class FileReceiver:
                 file_data.extend(chunk) # Append the received chunk to file_data
                 remaining -= len(chunk) # Update remaining bytes to receive
 
-            file_path = self.disk_writer.write_to_disk(filename, file_data)
+            file_path = self.disk_writer.write_to_disk(file_data, filename)
 
             if file_path:
                 logger.info(f"Successfully received file: {filename} and saved to {file_path}")
