@@ -19,6 +19,7 @@ import os
 import struct
 from typing import Tuple
 from .TCPSocketClient import TCPSocketClient
+import json
 
 class Uploader:
 
@@ -27,7 +28,7 @@ class Uploader:
         self.host = host
         self.port = port
     
-    def send_file(self, file_path: str) -> bool:
+    def send_file(self, file_path: str, options: dict = None) -> bool:
         if not os.path.exists(file_path):
             print(f"File {file_path} does not exist.")
             return False
@@ -36,36 +37,36 @@ class Uploader:
             return False
         
         try:
-            file_size = os.path.getsize(file_path)
+            # Prepare the header with JSON metadata, media type, and payload size
+            json_data = json.dumps(options or {}).encode('utf-8')
+            json_size = len(json_data)
 
+            # Extract media type from file name
             file_name = os.path.basename(file_path)
-            file_name_bytes = file_name.encode('utf-8')
+            media_type = os.path.splitext(file_name)[1].lstrip('.').encode('utf-8')
+            media_type_size = len(media_type)
 
-            name_len = len(file_name_bytes)
-            # Prepare the header with file name length, file name, and file size
-            header = struct.pack('!I', name_len) + file_name_bytes + struct.pack('!Q', file_size)
+            # Read the file payload
+            with open(file_path, 'rb') as f:
+                payload = f.read()
+            payload_size = len(payload)
+
+            # Construct the header
+            header = struct.pack('!HB', json_size, media_type_size) + payload_size.to_bytes(5, 'big')
+
             self.socket.send(header)
+            self.socket.send(json_data)
+            self.socket.send(media_type)
+            self.socket.send(payload)
 
-            # Debugging output for the header
-            print(f"Sending header: name_len={name_len}, file_name={file_name}, size={file_size}")
-            print(f"Header bytes: {len(header)}")
-        
-            with open(file_path, 'rb') as file:
-                # Read the file in chunks and send it
-                chunk_size = 4096
-                while True:
-                    chunk = file.read(chunk_size)
-                    if not chunk:
-                        break
-                    if not self.socket.send(chunk):
-                        print("Failed to send file data.")
-                        return False
-            
+            print(f"Sending requset: json_size={json_size}, media_type={media_type.decode('utf-8')}, payload_size={payload_size}")
+
+            # Wait for the server's response
             status_data = self.socket.receive(16)
             status = status_data.decode('utf-8', errors='ignore').strip()
 
             print(f"status from server: {status}")
-            return status == "SUCCESS"
+            return "SUCCESS" in status
         
         except Exception as e:
             print(f"An error occurred while uploading the file: {e}")
