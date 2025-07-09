@@ -16,6 +16,7 @@ Attributes:
 
 import logging
 import struct
+import json
 from typing import Optional
 from .TCPSocketServer import Connection
 from .FileReceiver import FileReceiver
@@ -39,39 +40,43 @@ class RequestHandler:
         try:
             logger.info(f"Handling connection from {conn.address}")
 
-            name_len_data = conn.receive(4)
-            if not name_len_data or len(name_len_data) != 4:
-                logger.error("Failed to receive name length data")
+            # read header data
+            header_data = conn.recv(8)
+            if not header_data or len(header_data) != 8:
+                logger.error("Failed to receive header data")
                 self.status_responder.send_status(conn, "ERROR")
                 return False
             
-            name_len = struct.unpack('!I', name_len_data)[0]
+            json_size, media_type_size = struct.unpack('!HB', header_data[:3])
+            payload_size = int.from_bytes(header_data[3:], 'big')
 
-            filename_data = conn.receive(name_len)
-            if not filename_data or len(filename_data) != name_len:
-                logger.error("Failed to receive filename data")
+            # read JSON data
+            json_data = conn.receive(json_size)
+            if not json_data or len(json_data) != json_size:
+                logger.error("Failed to receive JSON data")
                 self.status_responder.send_status(conn, "ERROR")
                 return False
+            options = json.loads(json_data.decode('utf-8'))
 
-            filename = filename_data.decode('utf-8')
-
-            size_data = conn.receive(8)
-            if not size_data or len(size_data) != 8:
-                logger.error("Failed to receive file size data")
+            # read media type
+            media_type_data = conn.receive(media_type_size)
+            if not media_type_data or len(media_type_data) != media_type_size:
+                logger.error("Failed to receive media type data")
                 self.status_responder.send_status(conn, "ERROR")
                 return False
+            media_type = media_type_data.decode('utf-8')
 
-            file_size = struct.unpack('!Q', size_data)[0]
+            filename = f"upload_{conn.address[0]}_{media_type}.{media_type}"
 
-            logger.info(f"Request to upload file: {filename} of size {file_size} bytes")
+            logger.info(f"Request from {conn.address}: options={options}, media_type={media_type}, payload_size={payload_size}bytes")
 
-            if not self.storage_checker.has_capacity(file_size):
-                logger.warning(f"Not enough storage capacity for file: {filename}")
+            if not self.storage_checker.has_capacity(payload_size):
+                logger.warning(f"Not enough storage capacity for file from {conn.address}")
                 self.status_responder.send_status(conn, "FULL")
                 return False
             
-            # Receive the metadata.Because the file_receiver already handles the file receiving process
-            success, received_filename, _ = self.file_receiver.receive_file_with_metadata(conn, filename, file_size)
+            success, received_filename, _ = self.file_receiver.receive_file_with_metadata(conn, filename, payload_size)
+
 
             if success:
                 self.status_responder.send_status(conn, "SUCCESS")
