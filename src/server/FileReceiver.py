@@ -23,7 +23,7 @@ example usage:
 """
 
 import logging
-import struct
+import os
 from typing import Tuple, Optional
 from .TCPSocketServer import Connection
 from .DiskWriter import DiskWriter
@@ -38,6 +38,9 @@ class FileReceiver:
 
     def __init__(self, disk_writer: DiskWriter):
         self.disk_writer = disk_writer
+    
+    def save_payload(self, filename: str, payload: bytes) -> Optional[str]:
+        # TODO: Implement logic to save the payload to disk
     
     def receive_file_with_metadata(self, conn: Connection, filename: str, file_size: int) -> Tuple[bool, str, int]:
         try:
