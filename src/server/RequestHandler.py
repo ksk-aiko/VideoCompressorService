@@ -17,6 +17,7 @@ Attributes:
 import logging
 import struct
 import json
+import uuid
 from typing import Optional
 from .TCPSocketServer import Connection
 from .FileReceiver import FileReceiver
@@ -66,8 +67,6 @@ class RequestHandler:
                 return False
             media_type = media_type_data.decode('utf-8')
 
-            filename = f"upload_{conn.address[0]}_{media_type}.{media_type}"
-
             logger.info(f"Request from {conn.address}: options={options}, media_type={media_type}, payload_size={payload_size}bytes")
 
             if not self.storage_checker.has_capacity(payload_size):
@@ -75,17 +74,23 @@ class RequestHandler:
                 self.status_responder.send_status(conn, "FULL")
                 return False
             
-            success, received_filename, _ = self.file_receiver.receive_file_with_metadata(conn, filename, payload_size)
+            filename = f"{uuid.uuid4()}.{media_type}"
+            saved_path = self.file_receiver.save_payload(filename, payload)
 
-
-            if success:
+            if saved_path:
                 self.status_responder.send_status(conn, "SUCCESS")
-                logger.info(f"Successfully received file: {received_filename}")
+                logger.info(f"Successfully received and saved file to {saved_path}")
                 return True
             else:
                 self.status_responder.send_status(conn, "ERROR")
-                logger.error(f":Failed to process file: {filename}")
+                logger.error(f"Failed to save file from {conn.address}")
                 return False
+        
+        except (json.JSONDecodeError, struct.error) as e:
+            logger.error(f"Protocol error handling connection: {e}")
+            self.status_responder.send_status(conn, "ERROR")
+            return False
+
         except Exception as e:
             logger.error(f"Error handling connection: {e}")
             try:
