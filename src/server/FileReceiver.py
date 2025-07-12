@@ -40,8 +40,14 @@ class FileReceiver:
         self.disk_writer = disk_writer
     
     def save_payload(self, filename: str, payload: bytes) -> Optional[str]:
-        # TODO: Implement logic to save the payload to disk
-    
+        logger.info(f"Requesting to write payload to disk as {filename}")
+        file_path = self.disk_writer.write_to_disk(payload, filename)
+        if file_path:
+            logger.info(f"Payload successfully saved to {file_path}")
+        else:
+            logger.error(f"DiskWriter failed to save payload for {filename}")
+        return file_path
+
     def receive_file_with_metadata(self, conn: Connection, filename: str, file_size: int) -> Tuple[bool, str, int]:
         try:
             logger.info(f"Receiving file with provided metadata: {filename} of size {file_size} bytes")
