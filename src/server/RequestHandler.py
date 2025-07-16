@@ -86,8 +86,6 @@ class RequestHandler:
                 if processed_path:
                     self.status_responder.send_status(conn, "SUCESS")
                     logger.info(f"Successfully processed file: {processed_path}")
-                    # TODO: Implement logic to send the processed file back to the client if needed
-                    # TODO: Clean up the original file if necessary
                     return True
             else:
                 self.status_responder.send_status(conn, "ERROR")

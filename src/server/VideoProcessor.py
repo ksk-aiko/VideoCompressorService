@@ -17,6 +17,10 @@ class VideoProcessor:
 
         if operation == "compress":
             return self._compress_video(input_path, output_path)
+        elif operation == "resize":
+            width = options.get("width")
+            height = options.get(height)
+            return self._resize_video(input_path, output_path, width, height)
         
         else:
             logger.error(f"Unknown operation: {operation}")
@@ -46,4 +50,29 @@ class VideoProcessor:
         except FileNotFoundError:
             logger.error("FFMPEG command not found. Please ensure FFMPEG is installed and in your PATH.")
             return None
+    
+    def _resize_video(self, input_path: str, output_path: str, width: int, height: int) -> str:
+        if not width or not height:
+            logger.error("Resize operation requires 'width' and 'height' options.")
+            return None
+        logger.info(f"Resizing {input_path} to {width}:{height}...")
+        command = [
+            'ffmpg',
+            '-i', input_path,
+            '-vf', f'scale={width}:{height}',
+            output_path
+        ]
+
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            logger.info(f"FFMPEG output: {result.stdout}")
+            logger.info(f"Video resized successfully: {output_path}")
+            return output_path
+        except subprocess.CalledProccessError as e:
+            logger.error(f"FFMPEG failed to resize video.")
+            logger.error(f"Command: {' '.join(command)}")
+            logger.error(f"Stderr: {e.stderr}")
+            return None
+        except FileNotFoundError:
+            logger.error("FFMPEG command not found.Please ensure FFMPEG is installed in your system's PATH.")
 
