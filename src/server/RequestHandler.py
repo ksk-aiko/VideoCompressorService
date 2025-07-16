@@ -23,6 +23,7 @@ from .TCPSocketServer import Connection
 from .FileReceiver import FileReceiver
 from .StorageChecker import StorageChecker
 from .StatusResponder import StatusResponder
+from .VideoProcessor import VideoProcessor
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,10 +33,11 @@ logger = logging.getLogger('RequestHandler')
 
 class RequestHandler:
     
-    def __init__(self, file_receiver: FileReceiver, storage_checker: StorageChecker, status_responder: StatusResponder):
+    def __init__(self, file_receiver: FileReceiver, storage_checker: StorageChecker, status_responder: StatusResponder, video_processor: VideoProcessor):
         self.file_receiver = file_receiver
         self.storage_checker = storage_checker
         self.status_responder = status_responder
+        self.video_processor = video_processor
 
     def handle_connection(self, conn: Connection) -> bool:
         try:
@@ -78,9 +80,15 @@ class RequestHandler:
             saved_path = self.file_receiver.save_payload(filename, payload)
 
             if saved_path:
-                self.status_responder.send_status(conn, "SUCCESS")
-                logger.info(f"Successfully received and saved file to {saved_path}")
-                return True
+                logger.info(f"Handing off {saved_path} to VidoeProcessor with options: {options}")
+                processed_path = self.video_processor.process(saved_path, options)
+                
+                if processed_path:
+                    self.status_responder.send_status(conn, "SUCESS")
+                    logger.info(f"Successfully processed file: {processed_path}")
+                    # TODO: Implement logic to send the processed file back to the client if needed
+                    # TODO: Clean up the original file if necessary
+                    return True
             else:
                 self.status_responder.send_status(conn, "ERROR")
                 logger.error(f"Failed to save file from {conn.address}")
