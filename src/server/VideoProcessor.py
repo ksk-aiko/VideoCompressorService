@@ -19,9 +19,11 @@ class VideoProcessor:
             return self._compress_video(input_path, output_path)
         elif operation == "resize":
             width = options.get("width")
-            height = options.get(height)
+            height = options.get("height")
             return self._resize_video(input_path, output_path, width, height)
-        
+        elif operation == "change_aspect_ratio":
+            aspect_ratio = options.get("aspect_ratio")
+            return self._change_aspect_ratio(input_path, output_path, aspect_ratio)
         else:
             logger.error(f"Unknown operation: {operation}")
             return None
@@ -75,4 +77,32 @@ class VideoProcessor:
             return None
         except FileNotFoundError:
             logger.error("FFMPEG command not found.Please ensure FFMPEG is installed in your system's PATH.")
+    
+    def _change_aspect_ratio(self, input_path: str, output_path: str, aspect_ratio: str) -> str:
+        if not aspect_ratio:
+            logger.error("Change aspect ratio operation requires 'aspect_ration' option.")
+            return None
+        
+        logger.info(f"Changing aspect ratio of {input_path} to {aspect_ratio}...")
+        command = [
+            'ffmpeg',
+            '-i', input_path,
+            '-aspect', aspect_ratio,
+            output_path
+        ]
+
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            logger.info(f"FFMPEG output: {result.stdout}")
+            logger.info(f"Aspect ratio changed successfully: {output_path}")
+            return output_path
+        except subprocess.CalledProcessError as e:
+            logger.error(f"FFMPEG failed to change aspect ratio.")
+            logger.error(f"Command: {' '.join(command)}")
+            logger.error(f"Stderr: {e.stderr}")
+            return None
+        except FileNotFoundError:
+            logger.error("FFMPEG command not found. Please ensure FFMPEG is installed and in your PATH.")
+            return None
+
 
