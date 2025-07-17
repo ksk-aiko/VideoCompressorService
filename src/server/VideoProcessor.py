@@ -24,6 +24,9 @@ class VideoProcessor:
         elif operation == "change_aspect_ratio":
             aspect_ratio = options.get("aspect_ratio")
             return self._change_aspect_ratio(input_path, output_path, aspect_ratio)
+        elif operation == "convert_to_audio":
+            audio_output_path = os.path.splitext(output_path)[0] + '.mp3'
+            return self._convert_to_audio(input_path, audio_output_path)
         else:
             logger.error(f"Unknown operation: {operation}")
             return None
@@ -98,6 +101,31 @@ class VideoProcessor:
             return output_path
         except subprocess.CalledProcessError as e:
             logger.error(f"FFMPEG failed to change aspect ratio.")
+            logger.error(f"Command: {' '.join(command)}")
+            logger.error(f"Stderr: {e.stderr}")
+            return None
+        except FileNotFoundError:
+            logger.error("FFMPEG command not found. Please ensure FFMPEG is installed and in your PATH.")
+            return None
+    
+    def _convert_to_audio(self, input_path: str, output_path: str) -> str:
+        logger.info(f"Converting {input_path} to audio {output_path}...")
+        command = [
+            'ffmpeg',
+            '-i', input_path,
+            '-vn', # Disable video recording
+            '-acodec', 'libmp3lame', # Use the LAME MP# audio encoder
+            '-q:a', '2', # Set audio quality
+            output_path
+        ]
+
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            logger.info(f"FFMPEG output: {result.stdout}")
+            logger.info(f"Audio converted successfully: {output_path}")
+            return output_path
+        except subprocess.CalledProcessError as e:
+            logger.error(f"FFMPEG failed to convert video to audio.")
             logger.error(f"Command: {' '.join(command)}")
             logger.error(f"Stderr: {e.stderr}")
             return None
