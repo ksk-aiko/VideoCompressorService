@@ -27,6 +27,11 @@ class VideoProcessor:
         elif operation == "convert_to_audio":
             audio_output_path = os.path.splitext(output_path)[0] + '.mp3'
             return self._convert_to_audio(input_path, audio_output_path)
+        elif operation == "create_clip":
+            start_time = options.get("start_time")
+            end_time = options.get("end_time")
+            output_format = options.get("format", "gif")
+            return self._create_clip(input_path, start_time, end_time, output_format)
         else:
             logger.error(f"Unknown operation: {operation}")
             return None
@@ -132,5 +137,75 @@ class VideoProcessor:
         except FileNotFoundError:
             logger.error("FFMPEG command not found. Please ensure FFMPEG is installed and in your PATH.")
             return None
+    
+    def _create_clip(self, input_path: str, start_time: str, end_time: str, output_format: str) -> str:
+        if not all[start_time, end_time, output_format]:
+            logger.error("Create clip operation requires 'start_time', 'end_time', and 'format' options.")
+            return None
+        
+        if output_format not in ['gif', 'webm']:
+            logger.error(f"Unsupported output format: {output_format}. Supported formats are 'gif' and 'webm'.")
+            return None
+        
+        base_name = os.path.basename(input_path)
+        output_filename = f"clip_{os.path.splitext(base_name)[0]}.{output_format}"
+        output_path = os.path.join(self.output_dir, output_filename)
+
+        logger.info(f"Creating clip from {input_path} from {start_time} to {end_time} in {output_format} format...")
+
+        command = [
+            'ffmpeg',
+            '-i', input_path,
+            '-ss', start_time,
+            '-to', end_time,
+            '-c:v', 'copy',
+            '-c:a', 'copy',
+            output_path
+        ]
+
+        if output_format == 'gif':
+            palette_path = os.path.join(self.output_dir, "palette.png")
+            palette_command = [
+                'ffmpeg',
+                '-y',
+                '-i', input_path,
+                '-ss', start_time,
+                '-to', end_time,
+                '-vf', 'fps=10,scale=320:-1:flags=lanczos,palettegen',
+                palette_path
+            ]
+
+            command = [
+                'ffmpeg',
+                '-y',
+                '-i', input_path,
+                '-i', palette_path,
+                '-ss', start_time,
+                '-to', end_time,
+                'vf', 'fps=10, scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse',
+                output_path
+            ]
+
+            try:
+                subprocess.rn(palette_command, check=True, capture_output=True, text=True)
+            except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                logger.error(f"FFMPEG failed to generate palette for GIF: {getattr(e, 'stderr', e)}")
+                return None
+            
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            logger.info(f"Clip created successfully: {output_path}")
+            return output_path
+        except subprocess.CalledProcessError as e:
+            logger.error(f"FFMPEG failed to create clip.")
+            logger.error(f"Command: {' '.join(command)}")
+            logger.error(f"Stderr: {e.stderr}")
+            return None
+        except FileNotFoundError:
+            logger.error("FFMPEG command not found. Please ensure FFMPEG is installed and in your PATH.")
+            return None
+
+
+
 
 
