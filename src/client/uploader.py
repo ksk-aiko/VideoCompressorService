@@ -92,8 +92,21 @@ class Uploader:
                 return output_path
             else: 
                 if response_json_data:
-                    error_info = json.loads(response_json_data.decode('utf-8'))
-                    print(f"Received an error from server: {error_info.get('error', 'Unknown error')}")
+                    try:
+                        error_data = json.loads(response_json_data.decode('utf-8'))
+                        if "error" in error_data:
+                            error_details = error_data["error"]
+                            print("\n---An error occurred on the server---")
+                            print(f"Error code: {error_details.get('code', 'N/A')}")
+                            print(f"Description: {error_details.get('description', 'No description provided')}")
+                            print(f"Suggested solution: {error_details.get('solution', 'No solition provided')}")
+                            print("-----------------------------------------\n")
+                        else:
+                            print(f"Received an unexpected response from server: {error_data}")
+                    except json.JSONDecodeError:
+                        print("Failed to decode the error response from the server.Raw data might be corrupted.")
+
+
                 else:
                     print("Received an empty or invalid response from server.")
                 return None
