@@ -18,6 +18,7 @@ import logging
 import struct
 import json
 import uuid
+import os
 from typing import Optional
 from .TCPSocketServer import Connection
 from .FileReceiver import FileReceiver
@@ -84,8 +85,8 @@ class RequestHandler:
                 processed_path = self.video_processor.process(saved_path, options)
                 
                 if processed_path:
-                    self.status_responder.send_status(conn, "SUCESS")
                     logger.info(f"Successfully processed file: {processed_path}")
+                    self._senf_file_response(conn, processed_path)
                     return True
             else:
                 self.status_responder.send_status(conn, "ERROR")
@@ -106,3 +107,30 @@ class RequestHandler:
             return False
         finally:
             conn.close()
+            logger.info(f"Connection closed for {conn.address}")
+        
+        def _senf_file_response(self, conn: Connection, file_path: str):
+            try:
+                with open(file_path, 'rb') as f:
+                    payload = f.read()
+
+                payload_size = len(payload)
+                media_type = os.path.splitext(file_path)[1].lstrip('.').encode('utf-8')
+                media_type_size = len(media_type)
+
+                json_data = b'{}'
+                json_size = len(json_data)
+
+                header = struct.pack('!H', json_size) + struct.pack('!B', media_type_size) + payload_size.to_bytes(5, 'big')
+
+                conn.send(header)
+                conn.send(json_data)
+                conn.send(media_type)
+                conn.send(payload)
+                logger.info(f"Sent processed file {file_path} to client.")
+
+            except FileNotFoundError:
+                logger.error(f"Could not find processed file to senf: {file_path}")
+                self.status_responder.send_status(conn, "ERROR")
+            except Exception as e:
+                logger.error(f"Failed to send file response: {e}")
