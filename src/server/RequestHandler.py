@@ -20,7 +20,7 @@ import json
 import uuid
 import os
 from typing import Optional
-from .TCPSocketServer import Connection
+from .Connection import Connection
 from .FileReceiver import FileReceiver
 from .StorageChecker import StorageChecker
 from .StatusResponder import StatusResponder

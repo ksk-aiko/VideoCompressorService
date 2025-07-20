@@ -20,6 +20,7 @@ import socket
 import threading
 import logging
 from typing import Optional, Tuple, Callable
+from .Connection import Connection
 from .ConnectionManager import ConnectionManager
 from .RequestHandler import RequestHandler
 
@@ -29,32 +30,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger('TCPSocketServer')
 
-class Connection:
-
-    def __init__(self, client_socket: socket.socket, client_address: Tuple[str, int]):
-        self.socket = client_socket
-        self.address = client_address
-
-    def send(self, data: bytes) -> bool:
-        try:
-            self.socket.sendall(data)
-            return True
-        except Exception as e:
-            logger.error(f"Failed to send data to {self.address}: {e}")
-            return False
-    
-    def receive(self, size: int) -> bytes:
-        try:
-            return self.socket.recv(size)
-        except Exception as e:
-            logger.error(f"Error receiving data: {e}")
-            return b''
-    
-    def close(self):
-        try:
-            self.socket.close()
-        except Exception as e:
-            logger.error(f"Error closing connection: {e}")
 
 class TCPSocketServer:
     def __init__(self, host: str, port: int, handler_factory: Callable, connection_manager: ConnectionManager):
