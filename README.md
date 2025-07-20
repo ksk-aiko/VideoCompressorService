@@ -1,164 +1,137 @@
-# VideoCompressorService
+# Video Compressor Service
 
 ## 概要
 
-VideoCompressorServiceは、ビデオファイルのアップロード機能を提供するクライアント/サーバーシステムです。クライアントがMP4ファイルをアップロードすると、サーバーでストレージ容量をチェックし、ファイルを保存します。将来的には圧縮処理の機能も追加予定です。
+Video Compressor Serviceは、動画ファイルに対する様々な処理を行う、高機能なクライアント/サーバーシステムです。クライアントは動画ファイルをアップロードし、圧縮、リサイズ、音声抽出などの処理をサーバーに依頼し、処理済みのファイルを受け取ることができます。
+
+通信にはカスタム設計のアプリケーションレベルプロトコル(MMP)を使用し、外部ツールであるFFMPEGをPythonから呼び出して、実際の動画処理を実行します。
 
 ## 特徴
 
-- クライアント/サーバーアーキテクチャに基づく設計
-- MP4形式のビデオファイルのアップロードとストレージ管理
-- シンプルなTCPソケット通信によるデータ転送
-- 効率的なチャンク方式のファイル転送
-- ストレージ容量の監視と管理
-- コマンドラインインターフェース（CLI）による操作性
+-   **多機能な動画処理**: FFMPEGを利用し、以下の機能を提供します。
+    -   動画の圧縮
+    -   解像度の変更
+    -   アスペクト比の変更
+    -   音声抽出（MP3形式）
+    -   指定時間でのクリップ作成（GIF/WEBM）
+-   **カスタムプロトコル(MMP)**: JSON形式のオプションとバイナリペイロードを組み合わせた、柔軟で拡張性の高いカスタム通信プロトコルを設計・実装。
+-   **リソース管理**:
+    -   IPアドレスに基づき、同時に1つの処理のみを許可することで、サーバーリソースの独占を防止。
+    -   処理完了後、アップロードされた元ファイルと処理済みファイルを自動的に削除し、ディスクスペースをクリーンに保つ。
+-   **堅牢なアーキテクチャ**:
+    -   マルチスレッド対応のTCPサーバー。
+    -   詳細なJSON形式のエラー報告機能。
+    -   依存性の注入(DI)を用いた、疎結合でメンテナンス性の高いコンポーネント設計。
 
 ## このプロジェクトを通して学べること・習得できること
 
 ### 1. ソフトウェア設計・アーキテクチャ
-- **クラス設計と責任分担**: 単一責任の原則(SRP)に基づいたクラス設計
-- **レイヤードアーキテクチャ**: プレゼンテーション層、ビジネスロジック層、データ層の分離
-- **デザインパターン**:
-  - コマンドパターン（CLI操作）
-  - ファサードパターン（複雑な処理の隠蔽）
-  - 依存性注入（コンポーネント間の結合度低減）
+-   **クラス設計と責任分担**: 単一責任の原則(SRP)に基づいたコンポーネント設計。
+-   **レイヤードアーキテクチャ**: プレゼンテーション、ビジネスロジック、データの各層の分離。
+-   **デザインパターン**: ファサードパターン(VideoProcessor)、依存性の注入(DI)。
 
 ### 2. ネットワークプログラミング
-- **TCPソケットプログラミング**: クライアント/サーバー間の通信
-- **バイナリプロトコル設計**: ヘッダーとペイロードの構造化
-- **チャンク転送**: 大きなファイルの効率的な転送方法
-- **エラーハンドリング**: ネットワーク接続の問題や切断への対応
+-   **TCPソケットプログラミング**: クライアント/サーバー間の安定した通信。
+-   **カスタムプロトコル設計**: ヘッダーとボディ（JSON + バイナリ）を組み合わせた独自の通信規約の設計と実装。
+-   **エラーハンドリング**: ネットワーク切断やプロトコル違反への堅牢な対応。
 
 ### 3. コンカレントプログラミング
-- **マルチクライアント対応**: 同時接続の処理
-- **リソース競合の管理**: 共有リソースへのアクセス制御
-- **シグナルハンドリング**: 適切なシャットダウン処理
+-   **マルチスレッドサーバー**: `threading`モジュールによる複数クライアントの同時接続処理。
+-   **リソース競合の管理**: `threading.Lock`を用いた、共有リソース（アクティブ接続リスト）への安全なアクセス制御。
 
-### 4. ファイル処理とI/O操作
-- **バイナリファイルの取り扱い**: 読み込みと書き込み
-- **ストリーム処理**: 効率的なデータ処理
-- **ディスクI/O最適化**: パフォーマンス向上テクニック
+### 4. 外部プロセス連携
+-   **`subprocess`モジュールの活用**: PythonプログラムからFFMPEGのような外部コマンドラインツールを安全に呼び出し、その実行結果（標準出力、エラー）を管理する。
 
 ### 5. Pythonプログラミング実践
-- **型ヒント(Type Hints)**: 可読性と保守性の向上
-- **構造化例外処理**: try/except/finallyブロックの適切な使用
-- **コンテキストマネージャー**: withステートメントによるリソース管理
-- **バイナリデータ操作**: struct、bytearrayモジュールの活用
+-   **型ヒント(Type Hints)**: コードの可読性と静的解析の精度を向上。
+-   **構造化例外処理**: `try/except/finally`による、エラーハンドリングとリソースクリーンアップの徹底。
+-   **バイナリデータ操作**: `struct`モジュールによる、固定長バイナリヘッダーのパックとアンパック。
 
-### 6. ログとデバッグ
-- **構造化ログ**: ログレベルと形式の標準化
-- **デバッグ技術**: 問題特定とトラブルシューティング
-- **テスト戦略**: 単体テストと統合テスト
+## アーキテクチャ
 
-### 7. ユーザーインターフェース設計
-- **コマンドラインインターフェース**: ユーザーフレンドリーなCLI設計
-- **エラーメッセージ**: 明確で実用的なエラー通知
+このプロジェクトのアーキテクチャは、`diagrams`フォルダ内にPlantUML形式で記述されています。
+各図は、システムの異なる側面を視覚化しています。
 
-### システムアーキテクチャ図
+-   `usecase.pu`: ユーザーとシステムのインタラクション
+-   `activity.pu`: システム全体のワークフロー
+-   `sequence.pu`: オブジェクト間の詳細な相互作用
+-   `class.pu`: クラスとその関連性
+-   `component.pu`: システムを構成する主要コンポーネント
 
+これらのファイルは、[PlantUMLをサポートするビューア](https://plantuml.com/viewers)やVS Codeの拡張機能などで表示できます。
+基本的なアーキテクチャは以下の通りです。
 ```mermaid
 graph TD
-    A[クライアント] -->|TCP接続| B[サーバー]
-    
-    subgraph クライアント側
-    A --> C[FileSelector]
-    A --> D[Validator]
-    A --> E[TCPSocketClient]
-    A --> F[Uploader]
-    end
-    
-    subgraph サーバー側
-    B --> G[TCPSocketServer]
-    G --> H[RequestHandler]
-    H --> I[FileReceiver]
-    H --> J[StorageChecker]
-    I --> K[DiskWriter]
-    H --> L[StatusResponder]
-    end
-    
-    I -.->|書き込み| M[(ストレージ)]
-    J -.->|容量確認| M
+  subgraph Client
+    CLI[Client CLI]
+  end
+
+  subgraph Server
+    TCPServer[Multi-threaded TCP Server]
+    Handler[Client Handler Thread]
+    Processor[VideoProcessor Facade]
+    Protocol[MMP Protocol Handler]
+  end
+
+  subgraph External
+    FFMPEG[FFMPEG Process]
+  end
+
+  CLI -- "1. Connect & Send Request (MMP)" --> TCPServer
+  TCPServer -- "2. Spawns Thread" --> Handler
+  Handler -- "3. Decodes Request" --> Protocol
+  Handler -- "4. Invokes Processing" --> Processor
+  Processor -- "5. Executes Command" --> FFMPEG
+  FFMPEG -- "6. Processes Video" --> Processor
+  Processor -- "7. Returns Processed File" --> Handler
+  Handler -- "8. Encodes & Sends Response (MMP)" --> Protocol
+  Handler -- "9. Streams Result" --> CLI
 ```
 
 ## 必要条件
-- Python3.7以上
-- ネットワーク接続(ローカルネットワークでも可)
+-   Python 3.7以上
+-   FFMPEG
+    -   システムの`PATH`に`ffmpeg`コマンドが含まれている必要があります。
 
-## インストール手順
-1. リポジトリをクローン
-```
-git clone https://github.com/yourusername/VideoCompressorService.git
-cd VideoCompressorService
-```
-2. ディレクトリ構造を確認
+## インストールとセットアップ
+1.  リポジトリをクローンします。
+    ```bash
+    git clone https://github.com/yourusername/VideoCompressorService.git
+    cd VideoCompressorService
+    ```
+2.  FFMPEGをインストールします。
+    -   **macOS (Homebrew)**: `brew install ffmpeg`
+    -   **Ubuntu/Debian**: `sudo apt update && sudo apt install ffmpeg`
+    -   **Windows**: [公式サイト](https://ffmpeg.org/download.html)からダウンロードし、実行ファイルのあるディレクトリに`PATH`を通してください。
 
-```
-VideoCompressorService/
-├── src/
-│   ├── client/
-│   │   ├── __init__.py
-│   │   ├── cli.py
-│   │   ├── FileSelector.py
-│   │   ├── TCPSocketClient.py
-│   │   ├── Uploader.py
-│   │   └── Validator.py
-│   └── server/
-│       ├── __init__.py
-│       ├── Server.py
-│       ├── DiskWriter.py
-│       ├── FileReceiver.py
-│       ├── RequestHandler.py
-│       ├── StatusResponder.py
-│       ├── StorageChecker.py
-│       └── TCPSocketServer.py
-├── uploads/  # アップロードされたファイルの保存先
-└── README.md
-```
 ## 使用方法
 
-### サーバー起動
+### サーバーの起動
+プロジェクトのルートディレクトリから、以下のコマンドを実行します。
+```bash
+python src/main.py
 ```
-# 基本的な起動（デフォルトポート5000）
-python -m src.server.Server
+サーバーが`localhost`のポート`5000`で待機を開始します。
 
-# ポートとストレージディレクトリを指定して起動
-python -m src.server.Server 8080 /path/to/storage
-```
-## クライアント実行
-```
-# デフォルト設定（localhost:5000に接続）
-python -m src.client.cli
+### クライアントの実行
+クライアントの実行には、`src/client/CLI.py`を直接実行します。引数として、処理したい動画ファイルのパスと、JSON形式のオプションを渡します。
 
-# サーバーホストとポートを指定
-python -m src.client.cli example.com 8080
+**例1: 動画を圧縮する**
+```bash
+python src/client/CLI.py path/to/your/video.mp4 '{"operation": "compress"}'
 ```
 
-## 機能一覧
-- ファイル選択：ローカルファイルシステムからMP4ファイルを選択
-- ファイル検証：選択されたファイルのフォーマット（MP4）とサイズ（最大100MB）を検証
-- ファイルアップロード：TCPソケット接続を使用してサーバーにファイルを送信
-- ストレージ管理：サーバーでのストレージ容量チェックと管理（最大4TB）
-- ステータス通知：クライアントへの処理結果通知
-## 技術スタック
-- 言語: Python 3.7+
-- ネットワーク: TCPソケットプログラミング
-- ファイル処理: バイナリデータ処理、構造化データ（struct）
-- ログ: Python標準ロギング
-- インターフェース: コマンドラインインターフェース（CLI）
+**例2: 解像度を 1280x720 に変更する**
+```bash
+python src/client/CLI.py path/to/your/video.mp4 '{"operation": "resize", "width": 1280, "height": 720}'
+```
 
-## 貢献方法
-- Fork this repository
-- Create a new branch (git checkout -b feature/your-feature)
-- Make your changes
-- Commit your changes (git commit -m 'Add some feature')
-- Push to the branch (git push origin feature/your-feature)
-- Open a Pull Request
+**例3: 10秒から15秒の範囲でGIFを作成する**
+```bash
+python src/client/CLI.py path/to/your/video.mp4 '{"operation": "create_clip", "start_time": "00:00:10", "end_time": "00:00:15", "format": "gif"}'
+```
+
+成功すると、処理済みのファイルが`downloads`フォルダに保存されます。
+
 ## ライセンス
-- MIT License
-
-## 将来の拡張計画
-- ファイル圧縮機能の追加
-- マルチスレッド処理によるパフォーマンス向上
-- ユーザー認証の実装
-- WebインターフェースによるGUIクライアントの開発
-- 圧縮進捗のリアルタイム表示機能
+This project is licensed under the MIT License.
