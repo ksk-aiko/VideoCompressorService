@@ -1,23 +1,53 @@
 @startuml
-title Activity Diagram - MP4 Upload Process
+title Activity Diagram - Video Processing Service
 
+|Client|
 start
+:Run CLI Client;
+:Select video file;
+:Choose processing option (e.g., compress, resize);
+:Connect to Server;
+:Construct MMP Packet (Header, JSON Options, Media Type, Payload);
+:Send MMP Packet;
 
-:User runs CLI Client;
-:Prompt user to select .mp4 file;
-if (File is .mp4?) then (yes)
-  :Open TCP connection to Server;
-  :Send 32-byte file size metadata;
-  :Send file in 1400-byte packets;
-  :Wait for 16-byte status response;
-  if (Success?) then (yes)
-    :Display success message;
-  else (no)
-    :Display failure message;
-  endif
+|Server|
+:Receive MMP Packet;
+:Parse Header;
+:Check if IP is already processing;
+if (IP is busy?) then (yes)
+  :Send Error (Server Busy);
 else (no)
-  :Display format error;
+  :Receive JSON, Media Type, Payload;
+  :Check storage capacity;
+  if (Enough space?) then (yes)
+    :Save payload to temporary file;
+    :Call VideoProcessor with options;
+    :Process video with FFMPEG;
+    if (Processing successful?) then (yes)
+      :Construct MMP response with processed file;
+      :Send processed file to Client;
+    else (no)
+      :Construct JSON error response;
+      :Send error to Client;
+    endif
+    :Delete temporary and processed files;
+  else (no)
+    :Construct JSON error response (Storage Full);
+    :Send error to Client;
+  endif
+  :Remove IP from active list;
 endif
+
+|Client|
+:Receive response;
+if (Response contains file?) then (yes)
+  :Save processed file to disk;
+  :Display success message;
+else (no)
+  :Parse JSON error;
+  :Display detailed error message;
+endif
+:Close connection;
 
 stop
 @enduml

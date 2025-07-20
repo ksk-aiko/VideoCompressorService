@@ -1,34 +1,50 @@
 @startuml
-title Component Diagram - MP4 Upload System
+title Component Diagram - Video Compressor Service
 
-package "Client Side" {
-  [CLI] --> [FileSelector]
-  [CLI] --> [Validator]
-  [CLI] --> [Uploader]
-  [Uploader] --> [TCPSocketClient]
+package "Client" {
+  [CLI]
+  [Uploader]
+  [TCPSocketClient]
 }
 
-package "Server Side" {
-  [TCPSocketServer] --> [RequestHandler]
-  [RequestHandler] --> [FileReceiver]
-  [RequestHandler] --> [StorageChecker]
-  [FileReceiver] --> [DiskWriter]
-  [RequestHandler] --> [StatusResponder]
+package "Server" {
+  [TCPSocketServer]
+  [ConnectionManager]
+  [RequestHandler]
+  [VideoProcessor]
+  [FileReceiver]
+  [DiskWriter]
+  [StorageChecker]
+  [StatusResponder]
+  [Connection]
 }
 
-[Client Binary] --> [CLI]
+[CLI] --> [Uploader]
+[Uploader] --> [TCPSocketClient]
 
-[Server Binary] --> [TCPSocketServer]
+[TCPSocketServer] --> [ConnectionManager]
+[TCPSocketServer] --> [RequestHandler] : (creates)
+[RequestHandler] --> [Connection]
+[RequestHandler] --> [VideoProcessor]
+[RequestHandler] --> [FileReceiver]
+[RequestHandler] --> [StorageChecker]
+[RequestHandler] --> [StatusResponder]
+[FileReceiver] --> [DiskWriter]
 
-note right of [Uploader]
-Handles TCP packetization and transmission
+[VideoProcessor] ..> [ffmpeg] : (executes)
+
+note right of [ConnectionManager]
+Limits one active process per IP address
+to ensure fair resource usage.
 end note
 
-note right of [StorageChecker]
-Prevents overcapacity (4TB limit)
+note right of [VideoProcessor]
+Acts as a facade for all FFMPEG operations,
+such as compression, resizing, and clipping.
 end note
 
-note right of [StatusResponder]
-Sends 16-byte status after
-file transfer completion
+note right of [RequestHandler]
+Orchestrates the entire server-side workflow
+for a single client connection.
 end note
+@enduml

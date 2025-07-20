@@ -1,27 +1,43 @@
 @startuml
-title Sequence Diagram - MP4 File Upload
+title Sequence Diagram - Video Processing Request
 
 actor User
-participant CLIClient as "CLI Client"
-participant TCPSocket as "TCP Socket"
-participant Server as "Upload Server"
-participant Disk as "Storage"
+participant Client
+participant Server
+participant ConnectionManager as "Conn. Manager"
+participant RequestHandler as "Handler"
+participant VideoProcessor as "Processor"
+participant Disk
 
-User -> CLIClient: Launch CLI and select .mp4 file
-CLIClient -> CLIClient: Validate file extension
-CLIClient -> TCPSocket: Establish TCP connection
-TCPSocket -> Server: Connect
+User -> Client: Run client with file and options (e.g., compress)
+Client -> Server: Establish TCP Connection
 
-CLIClient -> Server: Send 32-byte file size header
-loop For each 1400-byte packet
-    CLIClient -> Server: Send packet
+Server -> ConnectionManager: add_connection(ip)
+alt IP already active
+    ConnectionManager --> Server: false
+    Server --> Client: Send "SERVER_BUSY"
+    Client -> User: Display "Server Busy"
+else IP is new
+    ConnectionManager --> Server: true
+    Server -> RequestHandler: Create and start handler thread
+
+    Client -> RequestHandler: Send MMP Packet (Header, JSON, Media, Payload)
+    RequestHandler -> RequestHandler: Parse Header
+    RequestHandler -> RequestHandler: Receive Payload
+    RequestHandler -> Disk: Save payload to temp file
+
+    RequestHandler -> VideoProcessor: process(file, options)
+    VideoProcessor -> VideoProcessor: Execute FFMPEG command
+    VideoProcessor --> RequestHandler: Return processed_file_path
+
+    RequestHandler -> Disk: Read processed file
+    RequestHandler -> Client: Send MMP Packet with processed file
+
+    Client -> Disk: Save processed file
+    Client -> User: Display "Success"
 end
 
-Server -> Disk: Write packet to file
-
-Server -> Server: Verify full file received
-Server -> CLIClient: Send 16-byte status response
-
-CLIClient -> User: Display result message
+RequestHandler -> ConnectionManager: remove_connection(ip)
+Server -> Client: Close Connection
 
 @enduml

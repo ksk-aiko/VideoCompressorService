@@ -1,64 +1,78 @@
 @startuml
-title Class Diagram - MP4 Upload System
+title Class Diagram - Video Compressor Service
 
-class CLI {
-  +run()
+package "Client" {
+  class CLI {
+    +run()
+  }
+  class Uploader {
+    -socket: TCPSocketClient
+    +send_file(file: str, options: dict): str
+  }
+  class TCPSocketClient {
+    +connect(host, port)
+    +send(data)
+    +receive(size)
+    +close()
+  }
+  CLI --> Uploader
+  Uploader --> TCPSocketClient
 }
 
-class FileSelector {
-  +select_file(): str
+package "Server" {
+  class TCPSocketServer {
+    -connection_manager: ConnectionManager
+    -handler_factory: Callable
+    +start()
+    -_client_handler_wrapper()
+  }
+  class ConnectionManager {
+    -_active_ips: set
+    -_lock: Lock
+    +add_connection(ip): bool
+    +remove_connection(ip)
+  }
+  class RequestHandler {
+    -video_processor: VideoProcessor
+    +handle_connection()
+    -_send_file_response()
+    -_send_error_response()
+  }
+  class VideoProcessor {
+    +process(input, options): str
+    -_compress_video()
+    -_resize_video()
+    -_change_aspect_ratio()
+    -_convert_to_audio()
+    -_create_clip()
+  }
+  class FileReceiver {
+    -disk_writer: DiskWriter
+    +save_payload(filename, payload): str
+  }
+  class DiskWriter {
+    +write_to_disk(data, filename): str
+  }
+  class StorageChecker {
+    +has_capacity(size): bool
+  }
+  class StatusResponder {
+    +send_status(conn, status)
+  }
+  class Connection {
+    +send(data)
+    +receive(size)
+    +close()
+  }
 }
 
-class Validator {
-  +is_mp4(filename: str): bool
-}
-
-class Uploader {
-  -socket: TCPSocketClient
-  +send_file(file: str): bool
-}
-
-class TCPSocketClient {
-  +connect(host: str, port: int)
-  +send(data: bytes)
-  +receive(size: int): bytes
-  +close()
-}
-
-class TCPSocketServer {
-  +listen(port: int)
-  +accept(): Connection
-}
-
-class RequestHandler {
-  +handle_connection(conn: Connection)
-}
-
-class FileReceiver {
-  +receive_file(conn: Connection, size: int): str
-}
-
-class StorageChecker {
-  +has_capacity(file_size: int): bool
-}
-
-class DiskWriter {
-  +write_to_disk(file_data: bytes, path: str)
-}
-
-class StatusResponder {
-  +send_status(conn: Connection, status: str)
-}
-
-CLI --> FileSelector
-CLI --> Validator
-CLI --> Uploader
-Uploader --> TCPSocketClient
-
-TCPSocketServer --> RequestHandler
-RequestHandler --> FileReceiver
-RequestHandler --> StorageChecker
-RequestHandler --> StatusResponder
-FileReceiver --> DiskWriter
+TCPSocketServer o-- ConnectionManager
+TCPSocketServer ..> RequestHandler : creates
+RequestHandler o-- Connection
+RequestHandler o-- FileReceiver
+RequestHandler o-- StorageChecker
+RequestHandler o-- StatusResponder
+RequestHandler o-- VideoProcessor
+FileReceiver o-- DiskWriter
 
 @enduml
