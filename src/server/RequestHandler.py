@@ -48,6 +48,9 @@ class RequestHandler:
         self.video_processor = video_processor
 
     def handle_connection(self, conn: Connection) -> bool:
+        saved_path = None
+        procesed_path = None
+
         try:
             logger.info(f"Handling connection from {conn.address}")
 
@@ -115,6 +118,20 @@ class RequestHandler:
             self._send_error_response(conn, ERROR_UNEXPECTED, "Unexpected error", "An unexpected error occurred while processing the request.Please report this issue to the server administrator.")
             return False
         finally:
+            if saved_path and os.path.exists(saved_path):
+                try:
+                    os.remove(saved_path)
+                    logger.info(f"Cleaned up original file: {saved_path}")
+                except OSError as e:
+                    logger.error(f"Error deleting original file {saved_path}: {e}")
+            if procesed_path and os.path.exists(procesed_path):
+                try:
+                    os.remove(procesed_path)
+                    logger.info(f"Cleaned up processed file: {procesed_path}")
+                except OSError as e:
+                    logger.error(f"Error deleting processed file {procesed_path}: {e}")
+
+
             conn.close()
             logger.info(f"Connection closed for {conn.address}")
         
