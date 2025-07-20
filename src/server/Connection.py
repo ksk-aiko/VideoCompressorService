@@ -1,3 +1,8 @@
+import socket
+import logging
+from typing import Optional, Tuple
+
+logger = logging.getLogger('Connection')
 
 class Connection:
 
