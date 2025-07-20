@@ -64,28 +64,28 @@ Video Compressor Serviceは、動画ファイルに対する様々な処理を�
 graph TD
   subgraph Client
     CLI[Client CLI]
-  end
+    end
 
-  subgraph Server
+    subgraph Server
     TCPServer[Multi-threaded TCP Server]
     Handler[Client Handler Thread]
     Processor[VideoProcessor Facade]
     Protocol[MMP Protocol Handler]
-  end
+    end
 
-  subgraph External
+    subgraph External
     FFMPEG[FFMPEG Process]
-  end
+    end
 
-  CLI -- "1. Connect & Send Request (MMP)" --> TCPServer
-  TCPServer -- "2. Spawns Thread" --> Handler
-  Handler -- "3. Decodes Request" --> Protocol
-  Handler -- "4. Invokes Processing" --> Processor
-  Processor -- "5. Executes Command" --> FFMPEG
-  FFMPEG -- "6. Processes Video" --> Processor
-  Processor -- "7. Returns Processed File" --> Handler
-  Handler -- "8. Encodes & Sends Response (MMP)" --> Protocol
-  Handler -- "9. Streams Result" --> CLI
+    CLI -- '1. Connect & Send Request (MMP)' --> TCPServer
+    TCPServer -- '2. Spawns Thread' --> Handler
+    Handler -- '3. Uses Protocol to Decode' --> Protocol
+    Protocol -- '4. Returns Decoded Request' --> Handler
+    Handler -- '5. Invokes Processing' --> Processor
+    Processor -- '6. Executes Command' --> FFMPEG
+    FFMPEG -- '7. Processes Video' --> Processor
+    Processor -- '8. Returns Processed File' --> Handler
+    Handler -- '9. Streams Result' --> CLI
 ```
 
 ## 必要条件
