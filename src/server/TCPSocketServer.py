@@ -57,11 +57,11 @@ class Connection:
             logger.error(f"Error closing connection: {e}")
 
 class TCPSocketServer:
-    def __init__(self, host: str, port: int, handler_class: Callable[..., RequestHandler], connection_manager: ConnectionManager):
+    def __init__(self, host: str, port: int, handler_factory: Callable, connection_manager: ConnectionManager):
         self.server_socket: Optional[socket.socket] = None
         self.host = host
         self.port = port
-        self.handler_class = handler_class
+        self.handler_factory = handler_factory
         self.connection_manager = connection_manager
 
     def start(self):
@@ -102,7 +102,7 @@ class TCPSocketServer:
     
     def _client_handler_wrapper(self, connection: Connection, ip_address: str):
         try:
-            handler = self.handler_class(connection)
+            handler = self.handler_factory(connection)
             handler.handle_connection()
         except Exception as e:
             logger.error(f"Unhandled exception in handler for {connection.address}: {e}")
